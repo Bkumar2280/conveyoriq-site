@@ -1054,7 +1054,7 @@
     </div>
     <div class="modal-body" id="access-form-wrap">
       <p class="modal-desc">We're onboarding a small number of installation teams during beta. Tell us about your work and we'll be in touch within 24 hours.</p>
-      <form id="form-access" action="https://formspree.io/f/YOUR_FORMSPREE_ID" method="POST" novalidate>
+      <form id="form-access" action="https://formspree.io/f/xnjkajgk" method="POST" novalidate>
         <input type="hidden" name="form_type" value="Early Access Request">
         <div class="form-row">
           <div class="form-group">
@@ -1129,7 +1129,7 @@
     </div>
     <div class="modal-body" id="demo-form-wrap">
       <p class="modal-desc">We'll walk you through the full platform — document extraction, photo inspection, and NCR management — using a real conveyor spec document. 30 minutes, no slides.</p>
-      <form id="form-demo" action="https://formspree.io/f/YOUR_FORMSPREE_ID" method="POST" novalidate>
+      <form id="form-demo" action="https://formspree.io/f/xnjkajgk" method="POST" novalidate>
         <input type="hidden" name="form_type" value="Demo Request">
         <div class="form-row">
           <div class="form-group">
@@ -1187,106 +1187,111 @@
 </div>
 
 <script>
-// ── Formspree endpoint ─────────────────────────────────────────────────────
-// Replace YOUR_FORMSPREE_ID with the ID from your Formspree dashboard
-// e.g. if your endpoint is https://formspree.io/f/xabcdefg  use "xabcdefg"
-const FORMSPREE_ID = 'YOUR_FORMSPREE_ID';
-
-// Update both form actions dynamically so you only change one line above
-document.querySelectorAll('form[action]').forEach(f => {
-  f.action = `https://formspree.io/f/${FORMSPREE_ID}`;
-});
-
 // ── Open / close modals ────────────────────────────────────────────────────
 function openModal(id) {
-  document.getElementById(id).classList.add('open');
+  var overlay = document.getElementById(id);
+  if (!overlay) return;
+  overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
-  // Focus first input after animation
-  setTimeout(() => {
-    const first = document.querySelector(`#${id} input:not([type=hidden])`);
+  setTimeout(function() {
+    var first = overlay.querySelector('input:not([type=hidden])');
     if (first) first.focus();
   }, 280);
 }
 
 function closeModal(id) {
-  document.getElementById(id).classList.remove('open');
+  var overlay = document.getElementById(id);
+  if (!overlay) return;
+  overlay.classList.remove('open');
   document.body.style.overflow = '';
 }
 
-// Close on overlay click
-document.querySelectorAll('.modal-overlay').forEach(overlay => {
-  overlay.addEventListener('click', e => {
+// Close on overlay background click
+document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
+  overlay.addEventListener('click', function(e) {
     if (e.target === overlay) closeModal(overlay.id);
   });
 });
 
 // Close on Escape key
-document.addEventListener('keydown', e => {
+document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
-    document.querySelectorAll('.modal-overlay.open').forEach(o => closeModal(o.id));
+    document.querySelectorAll('.modal-overlay.open').forEach(function(o) {
+      closeModal(o.id);
+    });
   }
 });
 
-// ── Wire up all buttons ────────────────────────────────────────────────────
-// Any element with data-modal="access" or data-modal="demo" opens the right modal
-document.querySelectorAll('[data-modal]').forEach(el => {
-  el.addEventListener('click', e => {
+// ── Wire every data-modal button ──────────────────────────────────────────
+document.querySelectorAll('[data-modal]').forEach(function(el) {
+  el.addEventListener('click', function(e) {
     e.preventDefault();
-    openModal('modal-' + el.dataset.modal);
+    openModal('modal-' + el.getAttribute('data-modal'));
   });
 });
 
-// ── Form submission via fetch (no page redirect) ───────────────────────────
-async function handleFormSubmit(formId, submitBtnId, errorId, formWrapId, successId) {
-  const form = document.getElementById(formId);
-  const btn  = document.getElementById(submitBtnId);
-  const err  = document.getElementById(errorId);
+// ── Form submission ────────────────────────────────────────────────────────
+function handleFormSubmit(formId, submitBtnId, errorId, formWrapId, successId) {
+  var form = document.getElementById(formId);
+  var btn  = document.getElementById(submitBtnId);
+  var err  = document.getElementById(errorId);
+  if (!form || !btn || !err) return;
 
-  form.addEventListener('submit', async function(e) {
+  form.addEventListener('submit', function(e) {
     e.preventDefault();
 
-    // Basic validation
-    const required = form.querySelectorAll('[required]');
-    let valid = true;
-    required.forEach(field => {
-      if (!field.value.trim()) { field.style.borderColor = 'rgba(231,76,60,0.6)'; valid = false; }
-      else field.style.borderColor = '';
+    // Required field validation
+    var required = form.querySelectorAll('[required]');
+    var valid = true;
+    required.forEach(function(field) {
+      if (!field.value.trim()) {
+        field.style.borderColor = 'rgba(231,76,60,0.6)';
+        valid = false;
+      } else {
+        field.style.borderColor = '';
+      }
     });
-    if (!valid) { err.textContent = 'Please fill in all required fields.'; err.classList.add('show'); return; }
+    if (!valid) {
+      err.textContent = 'Please fill in all required fields.';
+      err.classList.add('show');
+      return;
+    }
 
     // Email format check
-    const emailField = form.querySelector('[type="email"]');
+    var emailField = form.querySelector('[type="email"]');
     if (emailField && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailField.value)) {
       emailField.style.borderColor = 'rgba(231,76,60,0.6)';
-      err.textContent = 'Please enter a valid email address.'; err.classList.add('show'); return;
+      err.textContent = 'Please enter a valid email address.';
+      err.classList.add('show');
+      return;
     }
 
     err.classList.remove('show');
-
-    // Loading state
     btn.disabled = true;
-    btn.innerHTML = '<div class="spinner"></div> Sending…';
+    btn.innerHTML = '<div class="spinner"></div> Sending\u2026';
 
-    try {
-      const res = await fetch(form.action, {
-        method: 'POST',
-        body: new FormData(form),
-        headers: { 'Accept': 'application/json' }
-      });
-
+    fetch(form.action, {
+      method: 'POST',
+      body: new FormData(form),
+      headers: { 'Accept': 'application/json' }
+    })
+    .then(function(res) {
       if (res.ok) {
-        // Show success
-        document.getElementById(formWrapId).style.display = 'none';
-        document.getElementById(successId).classList.add('show');
+        var wrap = document.getElementById(formWrapId);
+        var succ = document.getElementById(successId);
+        if (wrap) wrap.style.display = 'none';
+        if (succ) succ.classList.add('show');
       } else {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Server error');
+        throw new Error('Server error');
       }
-    } catch (error) {
+    })
+    .catch(function() {
       btn.disabled = false;
-      btn.innerHTML = '<span class="btn-text">' + (formId === 'form-access' ? 'Request early access' : 'Book my demo') + '</span>';
+      btn.innerHTML = formId === 'form-access'
+        ? '<span class="btn-text">Request early access</span>'
+        : '<span class="btn-text">Book my demo</span>';
       err.classList.add('show');
-    }
+    });
   });
 }
 
